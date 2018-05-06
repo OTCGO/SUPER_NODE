@@ -11,6 +11,17 @@ from coreweb import add_routes
 from dotenv import load_dotenv, find_dotenv
 load_dotenv(find_dotenv(), override=True)
 
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from random import randint
+from io import StringIO
+CACHE = StringIO()
+
+
+def tick():
+    print('Tick The time is: %s' % datetime.now())
+    CACHE.seek(0)
+    CACHE.write(str(randint(1,100)))
+
 
 get_listen_ip = lambda:os.environ.get('LISTENIP')
 get_listen_port = lambda:os.environ.get('LISTENPORT')
@@ -67,11 +78,15 @@ async def response_factory(app, handler):
 
 
 async def init(loop):
+    scheduler = AsyncIOScheduler()
+    scheduler.add_job(tick, 'interval', seconds=3)
+    scheduler.start()
     app = web.Application(loop=loop, middlewares=[
         logger_factory, response_factory
     ])
     listen_ip = get_listen_ip()
     listen_port = get_listen_port()
+    app['cache'] = CACHE
     app['session'] = aiohttp.ClientSession(loop=loop,connector_owner=False)
     add_routes(app, 'handlers')
     srv = await loop.create_server(app.make_handler(), listen_ip, listen_port)

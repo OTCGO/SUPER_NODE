@@ -6,6 +6,7 @@ import logging
 logging.basicConfig(level=logging.DEBUG)
 from dotenv import load_dotenv, find_dotenv
 load_dotenv(find_dotenv(), override=True)
+from io import StringIO
 
 NET = os.environ.get('NET')
 
@@ -19,4 +20,5 @@ def index(request):
             'ref':{
                 'Source Code':'https://github.com/OTCGO/SUPER_NODE/',
                 },
+            'random':request.app['cache'].getvalue(),
             }
