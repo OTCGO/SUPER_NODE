@@ -3,10 +3,10 @@ import asyncio
 from coreweb import get, post, options
 from aiohttp import web
 import logging
+import json
 logging.basicConfig(level=logging.DEBUG)
 from dotenv import load_dotenv, find_dotenv
 load_dotenv(find_dotenv(), override=True)
-from io import StringIO
 
 NET = os.environ.get('NET')
 
