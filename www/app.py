@@ -36,18 +36,18 @@ async def get_peers(session, uri):
     try:
         return await get_rpc(session, uri, 'getpeers', [])
     except Exception as e:
-        logger.error('error to get peers of {}'.format(uri))
+        logging.error('error to get peers of {}'.format(uri))
         return None
 
 async def scan(cache, session):
     print('Begin to scanning: %s' % datetime.now())
-    cache.seek(0)
     seeds = get_seeds()
     result = await asyncio.gather(*[get_peers(session,seed) for seed in seeds])
     peers = []
     for r in result:
         if r:
             peers.extend([i['address'][7:]+':'+str(i['port']-1) for i in r['connected']])
+    cache.seek(0)
     cache.write(json.dumps(list(set(peers))))
 
 get_listen_ip = lambda:os.environ.get('LISTENIP')
