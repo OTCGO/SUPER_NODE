@@ -7,7 +7,6 @@ import time
 import uvloop; asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
 from datetime import datetime
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from io import StringIO
 from aiohttp import web
 from coreweb import add_routes
 from dotenv import load_dotenv, find_dotenv
@@ -47,8 +46,7 @@ async def scan(cache, session):
     for r in result:
         if r:
             peers.extend([i['address'][7:]+':'+str(i['port']-1) for i in r['connected']])
-    cache.seek(0)
-    cache.write(json.dumps(list(set(peers))))
+    cache['peers'] = list(set(peers))
 
 get_listen_ip = lambda:os.environ.get('LISTENIP')
 get_listen_port = lambda:os.environ.get('LISTENPORT')
@@ -105,7 +103,7 @@ async def response_factory(app, handler):
 
 
 async def init(loop):
-    cache = StringIO()
+    cache = {}
     session = aiohttp.ClientSession(loop=loop,connector_owner=False)
     scheduler = AsyncIOScheduler(job_defaults = {
                     'coalesce': True,

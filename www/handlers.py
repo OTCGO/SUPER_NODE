@@ -20,5 +20,5 @@ def index(request):
             'ref':{
                 'Source Code':'https://github.com/OTCGO/SUPER_NODE/',
                 },
-            'random':request.app['cache'].getvalue(),
+            'random':request.app['cache']['peers'],
             }
