@@ -11,42 +11,7 @@ from aiohttp import web
 from coreweb import add_routes
 from dotenv import load_dotenv, find_dotenv
 load_dotenv(find_dotenv(), override=True)
-
-def get_seeds():
-    seeds = []
-    seed_num = int(os.environ.get('SEEDNUM'))
-    for i in range(1, seed_num+1):
-        seeds.append(os.environ.get('SEED{}'.format(i)))
-    return seeds
-
-async def get_rpc(session,uri,method,params):
-    async with session.post(uri,
-            json={'jsonrpc':'2.0','method':method,'params':params,'id':1}) as resp:
-        if 200 != resp.status:
-            logging.error('Unable to visit %s %s' % (uri, method))
-            return '404'
-        j = await resp.json()
-        if 'error' in j.keys():
-            logging.error('result error when %s %s' % (uri, method))
-            return '404'
-        return j['result']
-
-async def get_peers(session, uri):
-    try:
-        return await get_rpc(session, uri, 'getpeers', [])
-    except Exception as e:
-        logging.error('error to get peers of {}'.format(uri))
-        return None
-
-async def scan(cache, session):
-    print('Begin to scanning: %s' % datetime.now())
-    seeds = get_seeds()
-    result = await asyncio.gather(*[get_peers(session,seed) for seed in seeds])
-    peers = []
-    for r in result:
-        if r:
-            peers.extend([i['address'][7:]+':'+str(i['port']-1) for i in r['connected']])
-    cache['peers'] = list(set(peers))
+from task import scan
 
 get_listen_ip = lambda:os.environ.get('LISTENIP')
 get_listen_port = lambda:os.environ.get('LISTENPORT')
@@ -103,22 +68,23 @@ async def response_factory(app, handler):
 
 
 async def init(loop):
-    cache = {}
-    session = aiohttp.ClientSession(loop=loop,connector_owner=False)
+    conn = aiohttp.TCPConnector(limit=0,limit_per_host=2)
+    session = aiohttp.ClientSession(connector=conn)
+    cache = {'peers':[],'log':[]}
     scheduler = AsyncIOScheduler(job_defaults = {
                     'coalesce': True,
                     'max_instances': 1,
                     'misfire_grace_time': 20
         })
-    scheduler.add_job(scan, 'interval', minutes=1, args=[cache,session], id='super_node')
+    scheduler.add_job(scan, 'interval', minutes=1, args=[session, cache], id='super_node')
     scheduler.start()
     app = web.Application(loop=loop, middlewares=[
         logger_factory, response_factory
     ])
     listen_ip = get_listen_ip()
     listen_port = get_listen_port()
-    app['cache'] = cache
     app['session'] = session
+    app['cache'] = cache
     app['scheduler'] = scheduler
     add_routes(app, 'handlers')
     srv = await loop.create_server(app.make_handler(), listen_ip, listen_port)
