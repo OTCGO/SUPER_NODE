@@ -34,19 +34,19 @@ async def get_blockcount(session, uri, timeout=10):
         logging.error('error to get blockcount of %s %s' % (uri,e))
         return None
 
-async def get_peers(session, uri):
+async def get_peers(session, uri, timeout=10):
     try:
-        return await get_rpc(session, uri, 'getpeers', [])
+        return await get_rpc(session, uri, 'getpeers', [], timeout)
     except Exception as e:
         logging.error('error to get peers of %s %s' % (uri,e))
         return None
 
-async def get_log(session, uri, txid=None):
+async def get_log(session, uri, txid=None, timeout=30):
     if not txid:
         if 'mainnet' == NET: txid = '0xc920b2192e74eda4ca6140510813aa40fef1767d00c152aa6f8027c24bdf14f2'
         if 'testnet' == NET: txid = '0x1bae5666ef5d645bb7d6edbe53a179763fda44a1b4ec6a49c2051883e03d0ba1'
     try:
-        return await get_rpc(session, uri, 'getapplicationlog', [txid])
+        return await get_rpc(session, uri, 'getapplicationlog', [txid], timeout)
     except Exception as e:
         #logging.error('error to get log of %s %s' % (uri,e))
         return None
@@ -63,7 +63,7 @@ async def scan(session, cache):
             peers.extend([i['address'][7:]+':'+str(i['port']-1) for i in r['connected'] if i['port']>0])
     peers = list(set(peers))
 
-    urls = ['http://'+peer for peer in peers] + ['https://'+peer for peer in peers]
+    urls = ['http://'+peer for peer in peers]# + ['https://'+peer for peer in peers]
     urls.extend(cache['log'])
     urls.extend(seeds)
     urls = list(set(urls))
