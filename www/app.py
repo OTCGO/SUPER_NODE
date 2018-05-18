@@ -70,13 +70,13 @@ async def response_factory(app, handler):
 async def init(loop):
     conn = aiohttp.TCPConnector(limit=0,limit_per_host=2)
     session = aiohttp.ClientSession(connector=conn)
-    cache = {'peers':[],'log':[]}
+    cache = {'rpc':[],'log':[]}
     scheduler = AsyncIOScheduler(job_defaults = {
                     'coalesce': True,
                     'max_instances': 1,
                     'misfire_grace_time': 20
         })
-    scheduler.add_job(scan, 'interval', minutes=1, args=[session, cache], id='super_node')
+    scheduler.add_job(scan, 'interval', minutes=2, args=[session, cache], id='super_node')
     scheduler.start()
     app = web.Application(loop=loop, middlewares=[
         logger_factory, response_factory

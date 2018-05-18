@@ -27,6 +27,13 @@ async def get_rpc(session, uri, method, params, timeout=10):
             return None
         return j['result']
 
+async def get_blockcount(session, uri, timeout=10):
+    try:
+        return await get_rpc(session, uri, 'getblockcount', [], timeout)
+    except Exception as e:
+        logging.error('error to get blockcount of %s %s' % (uri,e))
+        return None
+
 async def get_peers(session, uri):
     try:
         return await get_rpc(session, uri, 'getpeers', [])
@@ -44,23 +51,33 @@ async def get_log(session, uri, txid=None):
         #logging.error('error to get log of %s %s' % (uri,e))
         return None
 
+
 async def scan(session, cache):
     print('Begin to scanning: %s' % datetime.now())
+
     seeds = get_seeds()
     result = await asyncio.gather(*[get_peers(session, seed) for seed in seeds])
     peers = []
     for r in result:
         if r:
             peers.extend([i['address'][7:]+':'+str(i['port']-1) for i in r['connected'] if i['port']>0])
-    cache['peers'] = list(set(peers))
-    urls = ['http://'+peer for peer in cache['peers']] + ['https://'+peer for peer in cache['peers']]
+    peers = list(set(peers))
+
+    urls = ['http://'+peer for peer in peers] + ['https://'+peer for peer in peers]
     urls.extend(cache['log'])
     urls.extend(seeds)
     urls = list(set(urls))
-    log_peers = []
-    log_result = await asyncio.gather(*[get_log(session, url) for url in urls])
+    rpcs = []
+    rpc_result = await asyncio.gather(*[get_blockcount(session, url) for url in urls])
+    for i in range(len(rpc_result)):
+        if rpc_result[i]:
+            rpcs.append(urls[i])
+    cache['rpc'] = rpcs
+
+    logs = []
+    log_result = await asyncio.gather(*[get_log(session, url) for url in cache['rpc']])
     for i in range(len(log_result)):
         if log_result[i]:
-            log_peers.append(urls[i])
-    cache['log'] = log_peers
+            logs.append(cache['rpc'][i])
+    cache['log'] = logs
 

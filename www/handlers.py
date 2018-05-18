@@ -7,7 +7,7 @@ import json
 logging.basicConfig(level=logging.DEBUG)
 from dotenv import load_dotenv, find_dotenv
 load_dotenv(find_dotenv(), override=True)
-from task import get_log
+from task import get_log, get_blockcount
 
 NET = os.environ.get('NET')
 
@@ -29,7 +29,7 @@ def index(request):
             'ref':{
                 'Source Code':'https://github.com/OTCGO/SUPER_NODE/',
                 },
-            'peers':request.app['cache']['peers'],
+            'rpc':request.app['cache']['rpc'],
             'log':request.app['cache']['log'],
             }
 
@@ -46,3 +46,16 @@ async def get_applicationlog(net, txid, request):
             return {'error':'fail to get applicationlog'}
     else:
         return {'error':'no node for get applicationlog'}
+
+@get('/{net}/height')
+async def get_height(net, request):
+    if not valid_net(net): return {'error':'wrong net'}
+    if request.app['cache']['rpc']:
+        results = await asyncio.gather(*[get_blockcount(request.app['session'], uri) for uri in request.app['cache']['rpc']])
+        result = list(filter(lambda i:i is not None, results))
+        if result:
+            return {'height':max(result)}
+        else:
+            return {'error':'fail to get height'}
+    else:
+        return {'error':'no node for get height'}
