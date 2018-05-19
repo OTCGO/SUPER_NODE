@@ -19,6 +19,15 @@ def valid_txid(txid):
     if 64 == len(txid): return '0x' + txid
     return None
 
+async def get_db_log(request, txid):
+    result = await request.app['db'].log.find_one({'_id':txid})
+    if not result: return None
+    return result
+
+async def update_db_log(request, txid, r):
+    await request.app['db'].log.update_one({'_id':txid}, {'$set':r},upsert=True)
+
+
 @get('/')
 def index(request):
     return {'hello':'%s' % NET,
@@ -35,13 +44,22 @@ def index(request):
 
 @get('/{net}/log/{txid}')
 async def get_applicationlog(net, txid, request):
+    #args verification
     if not valid_net(net): return {'error':'wrong net'}
     txid = valid_txid(txid) 
     if not txid: return {'error':'wrong txid'}
+    #db query
+    log = await get_db_log(request, txid)
+    if log:
+        del log['_id']
+        return log
+    #node query
     if request.app['cache']['log']:
         results = await asyncio.gather(*[get_log(request.app['session'], uri,txid) for uri in request.app['cache']['log']])
         for r in results:
-            if r: return r
+            if r:
+                await update_db_log(request, txid, r)
+                return r
         else:
             return {'error':'fail to get applicationlog'}
     else:
