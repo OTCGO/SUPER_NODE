@@ -4,6 +4,7 @@ import aiohttp
 import json
 import os
 import time
+import motor.motor_asyncio
 import uvloop; asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
 from datetime import datetime
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
@@ -13,6 +14,20 @@ from dotenv import load_dotenv, find_dotenv
 load_dotenv(find_dotenv(), override=True)
 from task import scan
 
+
+def get_mongo_uri():
+    mongo_uri    = os.environ.get('MONGOURI')
+    if mongo_uri: return mongo_uri
+    mongo_server = os.environ.get('MONGOSERVER')
+    mongo_port   = os.environ.get('MONGOPORT')
+    mongo_user   = os.environ.get('MONGOUSER')
+    mongo_pass   = os.environ.get('MONGOPASS')
+    if mongo_user and mongo_pass:
+        return 'mongodb://%s:%s@%s:%s' % (mongo_user, mongo_pass, mongo_server, mongo_port)
+    else:
+        return 'mongodb://%s:%s' % (mongo_server, mongo_port)
+
+get_mongo_db = lambda:os.environ.get('MONGODB')
 get_listen_ip = lambda:os.environ.get('LISTENIP')
 get_listen_port = lambda:os.environ.get('LISTENPORT')
 
@@ -86,6 +101,10 @@ async def init(loop):
     app['session'] = session
     app['cache'] = cache
     app['scheduler'] = scheduler
+    mongo_uri = get_mongo_uri()
+    mongo_db = get_mongo_db()
+    client = motor.motor_asyncio.AsyncIOMotorClient(mongo_uri)
+    app['db'] = client[mongo_db]
     add_routes(app, 'handlers')
     srv = await loop.create_server(app.make_handler(), listen_ip, listen_port)
     logging.info('server started at http://%s:%s...' % (listen_ip, listen_port))
