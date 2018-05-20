@@ -83,7 +83,7 @@ async def response_factory(app, handler):
 
 
 async def init(loop):
-    conn = aiohttp.TCPConnector(limit=0, limit_per_host=1000)#, ssl=False)
+    conn = aiohttp.TCPConnector(limit=10000, limit_per_host=10)#, ssl=False)
     session = aiohttp.ClientSession(connector=conn)
     cache = {'rpc':[],'log':[]}
     scheduler = AsyncIOScheduler(job_defaults = {
