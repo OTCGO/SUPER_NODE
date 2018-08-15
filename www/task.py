@@ -43,7 +43,7 @@ async def get_peers(session, uri, timeout=10):
 
 async def get_log(session, uri, txid=None, timeout=30):
     if not txid:
-        if 'mainnet' == NET: txid = '0xc920b2192e74eda4ca6140510813aa40fef1767d00c152aa6f8027c24bdf14f2'
+        if 'mainnet' == NET: txid = '0xd4e01144f6088028bc5af0e7e5e5dc9a0d133d54154275a966abd346d2319ff0'
         if 'testnet' == NET: txid = '0x1bae5666ef5d645bb7d6edbe53a179763fda44a1b4ec6a49c2051883e03d0ba1'
     try:
         return await get_rpc(session, uri, 'getapplicationlog', [txid], timeout)
