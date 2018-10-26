@@ -56,6 +56,7 @@ async def scan(session, cache):
     print('Begin to scanning: %s' % datetime.now())
 
     seeds = get_seeds()
+    urls = []
     urls.extend(cache['log'])
     urls.extend(seeds)
     urls = list(set(urls))
@@ -85,13 +86,10 @@ async def scan(session, cache):
 
 async def update_height(session, cache):
     rpc_result = await asyncio.gather(*[get_blockcount(session, url) for url in cache['fast']])
+    if not rpc_result: return
 
     fasts = []
     height = max([r for r in rpc_result if r])
-    for i in range(len(rpc_result)):
-        if height == rpc_result[i]:
-            fasts.append(cache['fast'][i])
-    cache['fast'] = fasts
 
     if cache['height'] < height:
         cache['height'] = height

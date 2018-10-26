@@ -38,6 +38,8 @@ def index(request):
             'ref':{
                 'Source Code':'https://github.com/OTCGO/SUPER_NODE/',
                 },
+            'height':request.app['cache']['height'],
+            'fast':request.app['cache']['fast'],
             'rpc':request.app['cache']['rpc'],
             'log':request.app['cache']['log'],
             }
@@ -68,4 +70,4 @@ async def get_applicationlog(net, txid, request):
 @get('/{net}/height')
 async def get_height(net, request):
     if not valid_net(net): return {'error':'wrong net'}
-    return {'height':request.app['cache']['height']
+    return {'height':request.app['cache']['height']}

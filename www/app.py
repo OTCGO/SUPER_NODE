@@ -89,10 +89,10 @@ async def init(loop):
     scheduler = AsyncIOScheduler(job_defaults = {
                     'coalesce': True,
                     'max_instances': 1,
-                    'misfire_grace_time': 20
+                    'misfire_grace_time': 3
         })
-    scheduler.add_job(scan, 'interval', minutes=2, args=[session, cache], id='super_node')
-    scheduler.add_job(update_height, 'interval', seconds=10, args=[session, cache], id='super_node')
+    scheduler.add_job(scan, 'interval', seconds=30, args=[session, cache], id='super_node')
+    scheduler.add_job(update_height, 'interval', seconds=4, args=[session, cache], id='update_height')
     scheduler.start()
     app = web.Application(loop=loop, middlewares=[
         logger_factory, response_factory
