@@ -68,12 +68,4 @@ async def get_applicationlog(net, txid, request):
 @get('/{net}/height')
 async def get_height(net, request):
     if not valid_net(net): return {'error':'wrong net'}
-    if request.app['cache']['rpc']:
-        results = await asyncio.gather(*[get_blockcount(request.app['session'], uri) for uri in request.app['cache']['rpc']])
-        result = list(filter(lambda i:i is not None, results))
-        if result:
-            return {'height':max(result)}
-        else:
-            return {'error':'fail to get height'}
-    else:
-        return {'error':'no node for get height'}
+    return {'height':request.app['cache']['height']

@@ -12,7 +12,7 @@ from aiohttp import web
 from coreweb import add_routes
 from dotenv import load_dotenv, find_dotenv
 load_dotenv(find_dotenv(), override=True)
-from task import scan
+from task import scan, update_height
 
 
 def get_mongo_uri():
@@ -85,13 +85,14 @@ async def response_factory(app, handler):
 async def init(loop):
     conn = aiohttp.TCPConnector(limit=10000, limit_per_host=10)#, ssl=False)
     session = aiohttp.ClientSession(connector=conn)
-    cache = {'rpc':[],'log':[]}
+    cache = {'height':0, 'fast':[], 'rpc':[],'log':[]}
     scheduler = AsyncIOScheduler(job_defaults = {
                     'coalesce': True,
                     'max_instances': 1,
                     'misfire_grace_time': 20
         })
     scheduler.add_job(scan, 'interval', minutes=2, args=[session, cache], id='super_node')
+    scheduler.add_job(update_height, 'interval', seconds=10, args=[session, cache], id='super_node')
     scheduler.start()
     app = web.Application(loop=loop, middlewares=[
         logger_factory, response_factory

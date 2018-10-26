@@ -56,14 +56,6 @@ async def scan(session, cache):
     print('Begin to scanning: %s' % datetime.now())
 
     seeds = get_seeds()
-    result = await asyncio.gather(*[get_peers(session, seed) for seed in seeds])
-    peers = []
-    for r in result:
-        if r:
-            peers.extend([i['address'][7:]+':'+str(i['port']-1) for i in r['connected'] if i['port']>0])
-    peers = list(set(peers))
-
-    urls = ['http://'+peer for peer in peers]# + ['https://'+peer for peer in peers]
     urls.extend(cache['log'])
     urls.extend(seeds)
     urls = list(set(urls))
@@ -74,6 +66,16 @@ async def scan(session, cache):
             rpcs.append(urls[i])
     cache['rpc'] = rpcs
 
+    fasts = []
+    height = max([r for r in rpc_result if r])
+    for i in range(len(rpc_result)):
+        if height == rpc_result[i]:
+            fasts.append(urls[i])
+    cache['fast'] = fasts
+
+    if cache['height'] < height:
+        cache['height'] = height
+
     logs = []
     log_result = await asyncio.gather(*[get_log(session, url) for url in cache['rpc']])
     for i in range(len(log_result)):
@@ -81,3 +83,15 @@ async def scan(session, cache):
             logs.append(cache['rpc'][i])
     cache['log'] = logs
 
+async def update_height(session, cache):
+    rpc_result = await asyncio.gather(*[get_blockcount(session, url) for url in cache['fast']])
+
+    fasts = []
+    height = max([r for r in rpc_result if r])
+    for i in range(len(rpc_result)):
+        if height == rpc_result[i]:
+            fasts.append(cache['fast'][i])
+    cache['fast'] = fasts
+
+    if cache['height'] < height:
+        cache['height'] = height
