@@ -78,10 +78,10 @@ async def scan(session, cache):
         cache['height'] = height
 
     logs = []
-    log_result = await asyncio.gather(*[get_log(session, url) for url in cache['rpc']])
+    log_result = await asyncio.gather(*[get_log(session, url) for url in cache['fast']])
     for i in range(len(log_result)):
         if log_result[i]:
-            logs.append(cache['rpc'][i])
+            logs.append(cache['fast'][i])
     cache['log'] = logs
 
 async def update_height(session, cache):
