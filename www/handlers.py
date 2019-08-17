@@ -7,12 +7,19 @@ import json
 logging.basicConfig(level=logging.DEBUG)
 from dotenv import load_dotenv, find_dotenv
 load_dotenv(find_dotenv(), override=True)
-from task import get_log, get_blockcount
+from task import get_log, get_blockcount, get_block_timepoint
 
 NET = os.environ.get('NET')
 
 def valid_net(net):
     return NET == net
+
+def valid_height(height):
+    try:
+        h = int(height)
+        if h >= 0: return True
+        return False
+    except: return False
 
 def valid_txid(txid):
     if 66 == len(txid) and txid.startswith('0x'): return txid
@@ -71,3 +78,15 @@ async def get_applicationlog(net, txid, request):
 async def get_height(net, request):
     if not valid_net(net): return {'error':'wrong net'}
     return {'height':request.app['cache']['height']}
+
+@get('/{net}/timepoint/{height}')
+async def get_timepoint(net, height, request):
+    if not valid_net(net): return {'error':'wrong net'}
+    if not valid_height(height): return {'error':'wrong height'}
+    h = int(height)
+    if h > request.app['cache']['height']: return {'error':'wrong height'}
+    if request.app['cache']['fast']:
+        tp = await get_block_timepoint(request.app['session'], request.app['cache']['fast'][0], h)
+        if tp: return {'timepoint':tp}
+        return {'error':'can not to get timepoint'}
+    return {'error':'can not to get timepoint'}

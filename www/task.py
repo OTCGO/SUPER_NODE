@@ -34,6 +34,15 @@ async def get_blockcount(session, uri, timeout=10):
         logging.error('error to get blockcount of %s %s' % (uri,e))
         return None
 
+async def get_block_timepoint(session, uri, height, timeout=30):
+    try:
+        r = await get_rpc(session, uri, 'getblock', [height, 1], timeout)
+        if r: return r['time']
+        return None
+    except Exception as e:
+        logging.error('error to get block timepoint of %s %s' % (uri,e))
+        return None
+
 async def get_peers(session, uri, timeout=10):
     try:
         return await get_rpc(session, uri, 'getpeers', [], timeout)
