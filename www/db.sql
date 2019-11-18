@@ -1,0 +1,10 @@
+SET SESSION default_storage_engine = InnoDB;
+CREATE DATABASE IF NOT EXISTS super_node DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
+USE super_node;
+
+CREATE TABLE IF NOT EXISTS applog (
+  id INT UNSIGNED AUTO_INCREMENT,
+  txid CHAR(64) UNIQUE NOT NULL,
+  applog TEXT,
+  PRIMARY KEY (id)
+);

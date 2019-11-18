@@ -11,7 +11,8 @@ aiohttp = "*"
 uvloop = "*"
 python-dotenv = "*"
 apscheduler = "*"
-motor = "*"
+logzero = "*"
+aiomysql = "*"
 
 
 [dev-packages]

@@ -1,29 +1,21 @@
-import logging; logging.basicConfig(level=logging.INFO)
 import asyncio
 import aiohttp
-import os
+from logzero import logger
 from datetime import datetime
-from dotenv import load_dotenv, find_dotenv
-load_dotenv(find_dotenv(), override=True)
+from config import Config as C
 
-NET = os.environ.get('NET')
+NET = C.get_net()
 
-def get_seeds():
-    seeds = []
-    seed_num = int(os.environ.get('SEEDNUM'))
-    for i in range(1, seed_num+1):
-        seeds.append(os.environ.get('SEED{}'.format(i)))
-    return seeds
 
 async def get_rpc(session, uri, method, params, timeout=10):
     async with session.post(uri,
             json={'jsonrpc':'2.0','method':method,'params':params,'id':1}, timeout=timeout) as resp:
         if 200 != resp.status:
-            logging.error('Unable to visit %s %s' % (uri, method))
+            logger.error('Unable to visit %s %s' % (uri, method))
             return None
         j = await resp.json()
         if 'error' in j.keys():
-            logging.error('result error when %s %s' % (uri, method))
+            logger.error('result error when %s %s' % (uri, method))
             return None
         return j['result']
 
@@ -31,7 +23,7 @@ async def get_blockcount(session, uri, timeout=10):
     try:
         return await get_rpc(session, uri, 'getblockcount', [], timeout)
     except Exception as e:
-        logging.error('error to get blockcount of %s %s' % (uri,e))
+        logger.error('error to get blockcount of %s %s' % (uri,e))
         return None
 
 async def get_block_timepoint(session, uri, height, timeout=30):
@@ -40,14 +32,14 @@ async def get_block_timepoint(session, uri, height, timeout=30):
         if r: return r['time']
         return None
     except Exception as e:
-        logging.error('error to get block timepoint of %s %s' % (uri,e))
+        logger.error('error to get block timepoint of %s %s' % (uri,e))
         return None
 
 async def get_peers(session, uri, timeout=10):
     try:
         return await get_rpc(session, uri, 'getpeers', [], timeout)
     except Exception as e:
-        logging.error('error to get peers of %s %s' % (uri,e))
+        logger.error('error to get peers of %s %s' % (uri,e))
         return None
 
 async def get_log(session, uri, txid=None, timeout=30):
@@ -57,14 +49,14 @@ async def get_log(session, uri, txid=None, timeout=30):
     try:
         return await get_rpc(session, uri, 'getapplicationlog', [txid], timeout)
     except Exception as e:
-        #logging.error('error to get log of %s %s' % (uri,e))
+        #logger.error('error to get log of %s %s' % (uri,e))
         return None
 
 
 async def scan(session, cache):
     print('Begin to scanning: %s' % datetime.now())
 
-    seeds = get_seeds()
+    seeds = C.get_seeds()
     urls = []
     urls.extend(cache['log'])
     urls.extend(seeds)

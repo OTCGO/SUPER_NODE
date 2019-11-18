@@ -1,15 +1,11 @@
-import os
-import asyncio
-from coreweb import get, post, options
-from aiohttp import web
-import logging
 import json
-logging.basicConfig(level=logging.DEBUG)
-from dotenv import load_dotenv, find_dotenv
-load_dotenv(find_dotenv(), override=True)
+import asyncio
+from aiohttp import web
+from config import Config as C
+from coreweb import get, post, options
 from task import get_log, get_blockcount, get_block_timepoint
 
-NET = os.environ.get('NET')
+NET = C.get_net()
 
 def valid_net(net):
     return NET == net
@@ -22,17 +18,9 @@ def valid_height(height):
     except: return False
 
 def valid_txid(txid):
-    if 66 == len(txid) and txid.startswith('0x'): return txid
-    if 64 == len(txid): return '0x' + txid
+    if 66 == len(txid) and txid.startswith('0x'): return txid[2:]
+    if 64 == len(txid): return txid
     return None
-
-async def get_db_log(request, txid):
-    result = await request.app['db'].log.find_one({'_id':txid})
-    if not result: return None
-    return result
-
-async def update_db_log(request, txid, r):
-    await request.app['db'].log.update_one({'_id':txid}, {'$set':r},upsert=True)
 
 
 @get('/')
@@ -58,7 +46,7 @@ async def get_applicationlog(net, txid, request):
     txid = valid_txid(txid) 
     if not txid: return {'error':'wrong txid'}
     #db query
-    log = await get_db_log(request, txid)
+    log = await request.app['db'].get_applog(txid)
     if log:
         del log['_id']
         return log
@@ -67,7 +55,7 @@ async def get_applicationlog(net, txid, request):
         results = await asyncio.gather(*[get_log(request.app['session'], uri,txid) for uri in request.app['cache']['log']])
         for r in results:
             if r:
-                await update_db_log(request, txid, r)
+                await request.app['db'].update_applog(txid, r)
                 return r
         else:
             return {'error':'fail to get applicationlog'}
