@@ -102,5 +102,5 @@ class DB:
             raise e
 
     async def update_applog(self, txid, applog):
-        sql = "INSERT IGNORE INTO applog(txid,applog) VALUES ('%s','%s') ON DUPLICATE KEY UPDATE update_height=%s;" % (txid,json.dumps(applog))
+        sql = "INSERT IGNORE INTO applog(txid,applog) VALUES ('%s','%s');" % (txid,json.dumps(applog))
         await self.mysql_insert_one(sql)

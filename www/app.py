@@ -6,15 +6,16 @@ import uvloop; asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from aiohttp import web
 from coreweb import add_routes
+from config import Config as C
 from task import scan, update_height
 from db import DB
 
 
 async def logger_factory(app, handler):
-    async def logger(request):
+    async def mylogger(request):
         logger.info('request:%s %s' % (request.method, request.path))
         return (await handler(request))
-    return logger
+    return mylogger
 
 async def response_factory(app, handler):
     async def response(request):

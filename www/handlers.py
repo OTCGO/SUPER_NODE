@@ -48,7 +48,6 @@ async def get_applicationlog(net, txid, request):
     #db query
     log = await request.app['db'].get_applog(txid)
     if log:
-        del log['_id']
         return log
     #node query
     if request.app['cache']['log']:
